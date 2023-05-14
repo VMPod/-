@@ -1,0 +1,30 @@
+import cv2
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+
+# Шаг 1: Получение изображения дорожного знака
+image = cv2.imread('path/to/image.jpg')
+
+# Шаг 2: Преобразование изображения из пространства цветов RGB в цветовую модель HSV
+hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+# Шаг 3: Выделение цветовых признаков дорожного знака путем определения диапазонов значений оттенка, насыщенности и значения, которые характерны для каждого типа знака
+color_ranges = pd.read_csv('path/to/color_ranges.csv') # Загрузка базы данных диапазонов цветовых признаков для каждого типа дорожного знака
+features = np.zeros(3) # Массив для хранения цветовых признаков
+
+for i in range(3):
+    features[i] = np.mean(color_ranges.iloc[sign_type, i*2:i*2+2]) # Вычисление средних значений цветовых признаков для данного типа знака
+
+# Шаг 4: Создание вектора признаков, содержащего значения оттенка, насыщенности и значения для каждого знака
+features = np.concatenate((features, hsv_image.mean(axis=(0,1))), axis=None)
+
+# Шаг 5: Классификация дорожного знака с помощью алгоритма машинного обучения
+X_train = pd.read_csv('path/to/training_data.csv') # Загрузка данных обучающей выборки
+y_train = X_train.pop('class').values
+knn = KNeighborsClassifier(n_neighbors=5) # Использование метода ближайших соседей
+knn.fit(X_train, y_train) # Обучение модели на обучающей выборке
+predicted_class = knn.predict(features.reshape(1,-1)) # Классификация дорожного знака
+
+# Шаг 6: Вывод результата классификации - определение типа дорожного знака
+print('Распознанный знак:', predicted_class[0])
